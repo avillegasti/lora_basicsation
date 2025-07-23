@@ -46,6 +46,7 @@ ARCH.linuxpico = x86_64-linux-gnu
 ARCH.corecell  = arm-linux-gnueabihf
 ARCH.rpi     = arm-linux-gnueabihf
 ARCH.kerlink = arm-klk-linux-gnueabi
+ARCH.corecell64 = aarch64-linux-gnu
 ARCH=${ARCH.${platform}}
 
 export TDfull := $(shell cd ${TD} && pwd)
@@ -83,6 +84,8 @@ BD=build-${platform}-${variant}
 # -- Architecture specific
 CFG.arm-linux-gnueabihf = linux
 # CFG.x86_64-linux-gnu    = linux
+CFG.aarch64-linux-gnu = linux
+
 
 # -- Variant specific
 #  testsim runs libloragw inside master process
@@ -103,6 +106,7 @@ CFG.linuxV2 = linux lgw2 no_leds lgw2genkey
 CFG.corecell = linux lgw1 no_leds sx1302
 CFG.rpi     = linux lgw1 no_leds
 CFG.kerlink = linux lgw1 no_leds
+CFG.corecell64   = linux lgw1 no_leds sx1302
 
 SD.default = src-linux
 
@@ -112,6 +116,7 @@ DEPS.default = mbedtls lgw
 DEPS.linuxpico = mbedtls smtcpico
 DEPS.linuxV2 = mbedtls lgw2
 DEPS.corecell = mbedtls lgw1302
+DEPS.corecell64 = mbedtls lgw1302
 DEPS.rpi     = mbedtls lgw
 
 DEPS = $(or ${DEPS.${platform}}, ${DEPS.default})
@@ -141,6 +146,7 @@ LIBS.linux   = -llgw   ${MBEDLIBS}      -lpthread
 LIBS.linuxV2 = -llgw2  ${MBEDLIBS} -lrt -lpthread -lspi
 LIBS.linuxpico = -llgw ${MBEDLIBS}      -lpthread
 LIBS.corecell = -llgw1302  ${MBEDLIBS}      -lpthread -lrt
+LIBS.corecell64 = -llgw1302  ${MBEDLIBS}      -lpthread -lrt
 LIBS.rpi     = -llgw   ${MBEDLIBS}      -lpthread
 LIBS.kerlink = -llgw   ${MBEDLIBS} -lrt -lpthread
 
