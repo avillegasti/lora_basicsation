@@ -98,6 +98,9 @@ CFG.std     = logini_lvl=INFO tlsdebug ral_lgw
 CFG.stdn    = logini_lvl=INFO tlsdebug ral_master_slave
 CFG.debug   = logini_lvl=DEBUG selftests tlsdebug ral_lgw
 CFG.debugn  = logini_lvl=DEBUG selftests tlsdebug ral_master_slave
+CFG.saf     = logini_lvl=INFO tlsdebug ral_lgw saf_lgw
+
+
 
 # -- Platform specific
 CFG.linux   = linux lgw1 no_leds
