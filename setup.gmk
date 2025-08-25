@@ -144,6 +144,8 @@ CFLAGS.linux.testms   = -g -O0 --coverage
 CFLAGS.linux.testfs   = -g -O0 --coverage
 CFLAGS.linux.testpin  = -g -O3
 CFLAGS.linux.std      = -g -O3
+CFLAGS.linux.saf      = -g -O3
+CFLAGS.linux.saf-nosstts751      = -g -O3
 
 LIBS.linux   = -llgw   ${MBEDLIBS}      -lpthread
 LIBS.linuxV2 = -llgw2  ${MBEDLIBS} -lrt -lpthread -lspi
