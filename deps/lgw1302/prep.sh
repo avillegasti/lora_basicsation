@@ -46,8 +46,16 @@ if [[ ! -d platform-${platform} ]]; then
     git clone -b ${lgwversion} git-repo platform-${platform}
 
     cd platform-${platform}
+
+    # Apply generic platform patch if present
     if [ -f ../${lgwversion}-${platform}.patch ]; then
         echo "Applying ${lgwversion}-${platform}.patch ..."
         git apply ../${lgwversion}-${platform}.patch
+    fi
+
+    # Apply custom STTS751 disable patch only if "no_stts751" is set in CFG
+    if [[ "${CFG}" == *"no_stts751"* ]] && [ -f ../${lgwversion}-${platform}-disable-stts751.patch ]; then
+        echo "Applying ${lgwversion}-${platform}-disable-stts751.patch (CFG includes no_stts751) ..."
+        git apply ../${lgwversion}-${platform}-disable-stts751.patch
     fi
 fi
