@@ -61,6 +61,7 @@ ${LGWINC}/%.h: ${PLT}/libloragw/inc/%.h | ${LGWINC}
 	@cp $< $@
 
 ${PLT}: prep.sh
+	CFG="${xCFG}" platform=${platform} variant=${variant} lgwversion=${LGWVERSION} ./prep.sh
 	platform=${platform} variant=${variant} lgwversion=${LGWVERSION} ./prep.sh
 	$(MAKE) --no-print-directory all platform=${platform} variant=${variant}
 

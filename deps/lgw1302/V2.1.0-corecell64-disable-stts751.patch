@@ -1,6 +1,3 @@
- libloragw/src/loragw_stts751.c | 7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
-
 diff --git a/libloragw/src/loragw_stts751.c b/libloragw/src/loragw_stts751.c
 index 7766961..1c46805 100644
 --- a/libloragw/src/loragw_stts751.c
@@ -38,3 +35,4 @@ index 7766961..1c46805 100644
 +    *temperature = 25.0;
  
      return LGW_I2C_SUCCESS;
+ }
