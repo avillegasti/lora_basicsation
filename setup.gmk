@@ -90,14 +90,15 @@ CFG.aarch64-linux-gnu = linux
 # -- Variant specific
 #  testsim runs libloragw inside master process
 #  testms  uses a master slave model
-CFG.testsim = logini_lvl=DEBUG selftests tlsdebug lgwsim ral_lgw
-CFG.testms  = logini_lvl=DEBUG selftests tlsdebug lgwsim ral_master_slave
-CFG.testfs  = logini_lvl=DEBUG selftests tlsdebug lgwsim ral_lgw
-CFG.testpin = logini_lvl=INFO tlsdebug ral_lgw testpin
-CFG.std     = logini_lvl=INFO tlsdebug ral_lgw
-CFG.stdn    = logini_lvl=INFO tlsdebug ral_master_slave
-CFG.debug   = logini_lvl=DEBUG selftests tlsdebug ral_lgw
-CFG.debugn  = logini_lvl=DEBUG selftests tlsdebug ral_master_slave
+CFG.testsim             = logini_lvl=DEBUG selftests tlsdebug lgwsim ral_lgw
+CFG.testms              = logini_lvl=DEBUG selftests tlsdebug lgwsim ral_master_slave
+CFG.testfs              = logini_lvl=DEBUG selftests tlsdebug lgwsim ral_lgw
+CFG.testpin             = logini_lvl=INFO tlsdebug ral_lgw testpin
+CFG.std                 = logini_lvl=INFO tlsdebug ral_lgw
+CFG.stdn                = logini_lvl=INFO tlsdebug ral_master_slave
+CFG.std-no_stts751       = logini_lvl=INFO tlsdebug ral_lgw no_stts751
+CFG.debug               = logini_lvl=DEBUG selftests tlsdebug ral_lgw
+CFG.debugn              = logini_lvl=DEBUG selftests tlsdebug ral_master_slave
 
 # -- Platform specific
 CFG.linux   = linux lgw1 no_leds

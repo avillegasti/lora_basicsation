@@ -1,32 +1,43 @@
 name: regr-tests
 on: [push]
+
 jobs:
   run-regr-tests:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
+
     steps:
+      # Step 1: Checkout repository
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+
+      # Step 2: Setup environment
       - name: Setup environment
         run: |
-          sudo apt-get install -y python3.7 python3-pip virtualenv psmisc git build-essential lcov curl netcat-openbsd
-          virtualenv --python python3.7 pyenv
+          sudo apt-get update
+          sudo apt-get install -y python3.11 python3-pip virtualenv psmisc git build-essential lcov curl netcat-openbsd
+          virtualenv --python python3 pyenv
           . pyenv/bin/activate
-          pip3 install setuptools aiohttp websockets
+          pip install --upgrade pip setuptools
+          pip install aiohttp websockets
+
+      # Step 3: Execute regression tests
       - name: Execute Tests
         run: |
-          # relax some regr test success conditions - related to timing
           . pyenv/bin/activate
           export PPSTHRES=100
           export TX_AIM_GAP='"40ms"'
           make -C regr-tests ci s2core.info
+
+      # Step 4: Archive test logs
       - name: Archive logs
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: Test logs
           path: regr-tests/t.log/*.log
+
+      # Step 5: Archive coverage report
       - name: Archive Coverage report
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: Coverage report
           path: regr-tests/s2core-html/**
-
