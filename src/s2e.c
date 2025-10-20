@@ -129,8 +129,25 @@ void s2e_addRxjob (s2ctx_t* s2ctx, rxjob_t* rxjob) {
                 LOG(MOD_S2E|DEBUG, "Dropped mirror frame freq=%F snr=%5.1f rssi=%d (vs. freq=%F snr=%5.1f rssi=%d) - DR%d mic=%d (%d bytes)",
                     p->freq, p->snr/4.0, -p->rssi, rxjob->freq, rxjob->snr/4.0, -rxjob->rssi,
                     p->dr, (s4_t)rt_rlsbf4(&s2ctx->rxq.rxdata[p->off]+rxjob->len-4), p->len);
-
+                print_rxjob(rxjob, s2ctx->rxq.rxdata);
                 rxq_commitJob(&s2ctx->rxq, rxjob);
+                uint32_t devaddr_num = s2ctx->rxq.rxdata[rxjob->off + 1] |
+                                    (s2ctx->rxq.rxdata[rxjob->off + 2] << 8) |
+                                    (s2ctx->rxq.rxdata[rxjob->off + 3] << 16) |
+                                    (s2ctx->rxq.rxdata[rxjob->off + 4] << 24);
+
+                char devaddr_str[9];
+                snprintf(devaddr_str, sizeof(devaddr_str), "%08X", devaddr_num);
+
+                if (is_devaddr_allowed(devaddr_str)) {
+                    store_rxjob_persist("lora_finalizar", rxjob, s2ctx->rxq.rxdata,
+                        rt_rlsbf4(&s2ctx->rxq.rxdata[rxjob->off]+rxjob->len-4));
+                    LOG(MOD_S2E|INFO, "Stored RXJOB from allowed DevAddr %s", devaddr_str);
+                } else {
+                    LOG(MOD_S2E|INFO, "Rejected RXJOB from DevAddr %s", devaddr_str);
+                }
+
+                //store_rxjob_persist("lora_finalizar", rxjob, s2ctx->rxq.rxdata,rt_rlsbf4(&s2ctx->rxq.rxdata[rxjob->off]+rxjob->len-4));
                 rxjob = rxq_dropJob(&s2ctx->rxq, p);
             } else {
                 // else: Drop newly retrieved frame - aka don't commit it
@@ -141,25 +158,55 @@ void s2e_addRxjob (s2ctx_t* s2ctx, rxjob_t* rxjob) {
             return;
         }
     }
+    LOG(MOD_S2E|INFO, "Received frame debug freq=%F snr=%5.1f rssi=%d - DR%d mic=%d (%d bytes)",
+        rxjob->freq, rxjob->snr/4.0, -rxjob->rssi,
+        rxjob->dr, (s4_t)rt_rlsbf4(&s2ctx->rxq.rxdata[rxjob->off]+rxjob->len-4), rxjob->len);
     // No mirror frame found
+    printf( "No mirror frame found - adding to RXQ");
+    print_rxjob(rxjob, s2ctx->rxq.rxdata);
     rxq_commitJob(&s2ctx->rxq, rxjob);
+        
+    uint32_t devaddr_num = s2ctx->rxq.rxdata[rxjob->off + 1] |
+                        (s2ctx->rxq.rxdata[rxjob->off + 2] << 8) |
+                        (s2ctx->rxq.rxdata[rxjob->off + 3] << 16) |
+                        (s2ctx->rxq.rxdata[rxjob->off + 4] << 24);
+
+    char devaddr_str[9];
+    snprintf(devaddr_str, sizeof(devaddr_str), "%08X", devaddr_num);
+
+    if (is_devaddr_allowed(devaddr_str)) {
+        store_rxjob_persist("lora_finalizar", rxjob, s2ctx->rxq.rxdata,
+            rt_rlsbf4(&s2ctx->rxq.rxdata[rxjob->off]+rxjob->len-4));
+        LOG(MOD_S2E|INFO, "Stored RXJOB from allowed DevAddr %s", devaddr_str);
+    } else {
+        LOG(MOD_S2E|INFO, "Rejected RXJOB from DevAddr %s", devaddr_str);
+    }
+    //store_rxjob_persist("lora_finalizar", rxjob, s2ctx->rxq.rxdata,rt_rlsbf4(&s2ctx->rxq.rxdata[rxjob->off]+rxjob->len-4));
+
 }
 
 void s2e_flushRxjobs (s2ctx_t* s2ctx) {
     while( s2ctx->rxq.first < s2ctx->rxq.next ) {
+        printf("Flushing RX job - processing next RX job\n");
         // Get a send buffer - parse frame / check filter
         ujbuf_t sendbuf = (*s2ctx->getSendbuf)(s2ctx, MIN_UPJSON_SIZE);
         if( sendbuf.buf == NULL ) {
             // Websocket has no space - WS will call again
+            printf("No send buffer available - will try later\n");
             return;
         }
+        printf("Got send buffer - processing RX job\n");
+        printf("sendbuf.size=%d\n", sendbuf.bufsize);
+        printf("sendbuf.pos=%d\n", sendbuf.pos);
+        printf("sendbuf.buf=%s\n", sendbuf.buf);
         rxjob_t* j = &s2ctx->rxq.rxjobs[s2ctx->rxq.first++];
         dbuf_t lbuf = { .buf = NULL };
-        if( log_special(MOD_S2E|VERBOSE, &lbuf) )
-            xprintf(&lbuf, "RX %F DR%d %R snr=%.1f rssi=%d xtime=0x%lX - ",
-                    j->freq, j->dr, s2e_dr2rps(s2ctx, j->dr), j->snr/4.0, -j->rssi, j->xtime);
+        //if( log_special(MOD_S2E|VERBOSE, &lbuf) )
+        //    xprintf(&lbuf, "RX %F DR%d %R snr=%.1f rssi=%d xtime=0x%lX - ",
+        //            j->freq, j->dr, s2e_dr2rps(s2ctx, j->dr), j->snr/4.0, -j->rssi, j->xtime);
 
         uj_encOpen(&sendbuf, '{');
+        printf("Will parse Lora frame ------------------ \n");
         if( !s2e_parse_lora_frame(&sendbuf, &s2ctx->rxq.rxdata[j->off], j->len, lbuf.buf ? &lbuf : NULL) ) {
             // Frame failed sanity checks or stopped by filters
             sendbuf.pos = 0;
@@ -187,9 +234,14 @@ void s2e_flushRxjobs (s2ctx_t* s2ctx) {
                   "}",
                   NULL);
         uj_encClose(&sendbuf, '}');
+        printf("Send buffer after parsing -----------------\n");
+        printf("sendbuf.size=%d\n", sendbuf.bufsize);
+        printf("sendbuf.pos=%d\n", sendbuf.pos);
+        printf("sendbuf.buf=%s\n", sendbuf.buf);
         if( !xeos(&sendbuf) ) {
             LOG(MOD_S2E|ERROR, "JSON encoding exceeds available buffer space: %d", sendbuf.bufsize);
         } else {
+            printf("Sending text -----------------\n");
             (*s2ctx->sendText)(s2ctx, &sendbuf);
             assert(sendbuf.buf==NULL);
         }
@@ -858,6 +910,8 @@ inline static void upch_insert (chdefl_t* upchs, uint idx, u4_t freq, u1_t bw, u
 }
 
 static int handle_router_config (s2ctx_t* s2ctx, ujdec_t* D) {
+    //LOG(MOD_DB|INFO, "Handling router configuration");
+    printf( "Handling router configuration");
     char hwspec[MAX_HWSPEC_SIZE] = { 0 };
     ujbuf_t sx130xconf = { .buf=NULL };
     ujcrc_t field;
@@ -1175,6 +1229,9 @@ static int handle_router_config (s2ctx_t* s2ctx, ujdec_t* D) {
         }
     }
     ts_iniTimesync();
+    LOG(MOD_DB, "Timesync initialized-----------------------");
+    printf("Timesync initialized-----------------------");
+    LOG(MOD_S2E|INFO, "Initializing radio for %s", hwspec);
     if( !ral_config(hwspec,
                     s2ctx->ccaEnabled ? s2ctx->region : 0,
                     sx130xconf.buf, sx130xconf.bufsize,

@@ -84,6 +84,9 @@ u4_t  s2e_netidFilter[4] = { 0xffFFffFF, 0xffFFffFF, 0xffFFffFF, 0xffFFffFF };
 
 
 int s2e_parse_lora_frame (ujbuf_t* buf, const u1_t* frame , int len, dbuf_t* lbuf) {
+    printf("----------Parsing LORA FRAME ------------------\n");
+    //LOG(MOD_DB|DEBUG, "s2e_parse_lora_frame: frame data: %*H", len, frame);
+    printf("s2e_parse_lora_frame: frame data: %*H", len, frame);
     if( len == 0 ) {
     badframe:
         LOG(MOD_S2E|DEBUG, "Not a LoRaWAN frame: %16.4H", len, frame);

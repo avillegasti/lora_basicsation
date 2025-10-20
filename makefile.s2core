@@ -26,6 +26,7 @@
 
 TD=../..
 include ${TD}/setup.gmk
+LIBS += -lsqlite3
 
 TARGET.default = ../bin/station
 TARGET = $(or ${TARGET.${platform}}, ${TARGET.default})

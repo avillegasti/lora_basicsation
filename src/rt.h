@@ -118,7 +118,7 @@ enum { XDEBUG=0, DEBUG, VERBOSE, INFO, NOTICE, WARNING, ERROR, CRITICAL };  // m
 enum { MOD_ANY= 0*8, MOD_RAL= 1*8, MOD_S2E= 2*8, MOD_WSS= 3*8,
        MOD_JSN= 4*8, MOD_AIO= 5*8, MOD_CUP= 6*8, MOD_SYS= 7*8,
        MOD_TCE= 8*8, MOD_HAL= 9*8, MOD_SIO=10*8, MOD_SYN=11*8,
-       MOD_GPS=12*8, MOD_SIM=13*8, MOD_WEB=14*8, MOD_ALL=0xF8 };
+       MOD_GPS=12*8, MOD_SIM=13*8, MOD_WEB=14*8, MOD_DB=15*8, MOD_ALL=0xF8 };
 
 void  log_setSlaveIdx (s1_t idx);
 int   log_setLevel (int level);

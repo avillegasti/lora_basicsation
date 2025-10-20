@@ -240,3 +240,4 @@
 #define J_wifi_ssid            ((ujcrc_t)(0xE60F391C))
 #define J_wifi_pass            ((ujcrc_t)(0xE13C3600))
 #define J_cups_uri             ((ujcrc_t)(0x594AB0B8))
+#define J_saf_allow            ((ujcrc_t)(0x59A0AE94))

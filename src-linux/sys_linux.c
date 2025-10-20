@@ -37,7 +37,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
-
+#include "config.h"
 #include "argp2.h"
 #include "s2conf.h"
 #include "kwcrc.h"
@@ -50,7 +50,9 @@
 #include "sys_linux.h"
 #include "fs.h"
 #include "selftests.h"
-
+#if defined(CFG_saf_lgw)
+#include "db.h" 
+#endif
 #include "mbedtls/version.h"
 
 extern char* makeFilepath (const char* prefix, const char* suffix, char** pCachedFile, int isReadable); // sys.c
@@ -673,6 +675,7 @@ static int setLogFile (str_t logdef, str_t source) {
 }
 
 static int parseStationConf () {
+    printf("-----PARSEANDO STATION_CONF\n");    
     str_t filename = "station.conf";
     dbuf_t jbuf = sys_readFile(filename);
     if( jbuf.buf == NULL ) {
@@ -688,12 +691,17 @@ static int parseStationConf () {
     }
     u1_t ccaDisabled=0, dcDisabled=0, dwellDisabled=0;   // fields not present
     ujcrc_t field;
+    printf("Field : 0x%08X\n",field);
     uj_enterObject(&D);
+    printf("Iterando fields .....\n");
     while( (field = uj_nextField(&D)) ) {
+        printf("Field : 0x%08X\n",field);
         switch(field) {
         case J_station_conf: {
             uj_enterObject(&D);
             while( (field = uj_nextField(&D)) ) {
+                printf("Field anidado: 0x%08X\n",field);
+
                 switch(field) {
                 case J_routerid: {
                     if( !setEui(uj_str(&D), filename) )
@@ -791,6 +799,9 @@ static int parseStationConf () {
                 case J_web_dir: {
                     setWebDir(uj_str(&D), filename);
                     break;
+                }
+                case J_saf_allow: {
+                       break;
                 }
                 default: {
                     dbuf_t b = uj_skipValue(&D);
@@ -1142,7 +1153,22 @@ int sys_main (int argc, char** argv) {
         sys_slaveExec = rt_strdup("/proc/self/exe -S");
     }
 #endif // defined(CFG_ral_master_slave)
+#if defined(CFG_saf_lgw)
+    create_db("lora_uploads");
+    create_db_persistant("lora_finalizar");
 
+    if (load_allowed_devaddr("./config.toml") != 0) {
+        printf("Error al leer config.toml\n");
+    } else {
+        printf("=== DevAddrs permitidos (%d) ===\n", allowed_count);
+        for (int i = 0; i < allowed_count; i++) {
+            printf("  %s\n", allowed_devaddrs[i]);
+        }
+        printf("===============================\n");
+    }
+
+    LOG(MOD_SYS|INFO, "Finalizar DB created");
+#endif // defined(CFG_saf_lgw)
     {
         str_t prefix = opts->euiprefix;
         str_t source = "--eui-prefix";

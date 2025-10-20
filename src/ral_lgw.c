@@ -44,6 +44,9 @@
 #include "lgw/loragw_sx1302_timestamp.h"
 extern timestamp_counter_t counter_us; // from loragw_sx1302.c
 #endif // defined(CFG_sx1302)
+#if defined(CFG_saf_lgw)
+#include "db.h" 
+#endif
 
 #define RAL_MAX_RXBURST 10
 
@@ -294,6 +297,54 @@ static void log_rawpkt(u1_t level, str_t msg, struct lgw_pkt_rx_s * pkt_rx) {
         pkt_rx->size, pkt_rx->payload
     );
 }
+void print_pkt_rx(struct lgw_pkt_rx_s *pkt) {
+    printf("----- RX Packet -----\n");
+    printf("freq_hz     : %u Hz\n", pkt->freq_hz);
+    printf("freq_offset : %d\n", pkt->freq_offset);
+    printf("if_chain    : %u\n", pkt->if_chain);
+    printf("status      : %u\n", pkt->status);
+    printf("count_us    : %u\n", pkt->count_us);
+    printf("rf_chain    : %u\n", pkt->rf_chain);
+    printf("modem_id    : %u\n", pkt->modem_id);
+    printf("modulation  : %u\n", pkt->modulation);
+    printf("bandwidth   : %u\n", pkt->bandwidth);
+    printf("datarate    : %u\n", pkt->datarate);
+    printf("coderate    : %u\n", pkt->coderate);
+    printf("rssic       : %.2f dB\n", pkt->rssic);
+    printf("rssis       : %.2f dB\n", pkt->rssis);
+    printf("snr         : %.2f dB\n", pkt->snr);
+    printf("snr_min     : %.2f dB\n", pkt->snr_min);
+    printf("snr_max     : %.2f dB\n", pkt->snr_max);
+    printf("crc         : %u\n", pkt->crc);
+    printf("size        : %u\n", pkt->size);
+    printf("ftime_received : %s\n", pkt->ftime_received ? "true" : "false");
+    printf("ftime       : %u\n", pkt->ftime);
+
+    printf("payload (%u bytes): ", pkt->size);
+    for (int i = 0; i < pkt->size; i++) {
+        printf("%02X ", pkt->payload[i]);
+    }
+    printf("\n---------------------\n");
+}
+
+void print_rxjob(const rxjob_t *job, const u1_t *rxdata) {
+    printf("===== RX Job =====\n");
+    printf("rctx      : %d\n", job->rctx);
+    printf("xtime     : %d\n", job->xtime);
+    printf("fts       : %d\n", job->fts);
+    printf("freq      : %u Hz\n", job->freq);
+    printf("off       : %u\n", job->off);
+    printf("rssi      : %d dB (scaled)\n", -(int)job->rssi); // original RSSI was negated
+    printf("snr       : %.2f dB (scaled)\n", job->snr / 4.0);
+    printf("dr        : %u\n", job->dr);
+    printf("len       : %u\n", job->len);
+
+    printf("payload   : ");
+    for (int i = 0; i < job->len; i++) {
+        printf("%02X ", rxdata[job->off + i]);
+    }
+    printf("\n==================\n");
+}
 
 //ATTR_FASTCODE 
 static void rxpolling (tmr_t* tmr) {
@@ -308,6 +359,11 @@ static void rxpolling (tmr_t* tmr) {
         if( n==0 ) {
             break;
         }
+        if (n > 0) {
+            print_pkt_rx(&pkt_rx);
+        }
+        //LOG(MOD_DB|INFO, "Received packet(s) from SX1301");
+        printf("Received packet(s) from SX1301");
 
         rxjob_t* rxjob = !TC ? NULL : s2e_nextRxjob(&TC->s2ctx);
         if( rxjob == NULL ) {
@@ -320,6 +376,30 @@ static void rxpolling (tmr_t* tmr) {
             }
             continue; // silently ignore bad CRC
         }
+        if( pkt_rx.status == STAT_CRC_OK ) {
+            printf("RX payload (%d bytes): ", pkt_rx.size);
+            for(int i = 0; i < pkt_rx.size; i++) {
+                printf("%02X ", pkt_rx.payload[i]);
+            }
+            printf("\n");
+        uint32_t devaddr_num = pkt_rx.payload[1] |
+                            (pkt_rx.payload[2] << 8) |
+                            (pkt_rx.payload[3] << 16) |
+                            (pkt_rx.payload[4] << 24);
+
+        // Convert to hex string
+        char devaddr_str[9]; // 8 chars + null terminator
+        snprintf(devaddr_str, sizeof(devaddr_str), "%08X", devaddr_num);
+
+        // Check if allowed
+            if (is_devaddr_allowed(devaddr_str)) {
+                store_data("lora_uploads", pkt_rx.payload, pkt_rx.size);
+                printf("Stored packet from DevAddr %s\n", devaddr_str);
+                } else {
+                    printf("Rejected packet from DevAddr %s\n", devaddr_str);
+            }
+        }
+        
         if( pkt_rx.size > MAX_RXFRAME_LEN ) {
             // This should not happen since caller provides
             // space for max frame length - 255 bytes
@@ -347,7 +427,8 @@ static void rxpolling (tmr_t* tmr) {
         if( log_shallLog(MOD_RAL|XDEBUG) ) {
             log_rawpkt(XDEBUG, "", &pkt_rx);
         }
-
+        printf("------ ANTES DE s2e_addRxjob ------\n");    
+        print_rxjob(rxjob, TC->s2ctx.rxq.rxdata);
         s2e_addRxjob(&TC->s2ctx, rxjob);
 
     }
@@ -357,6 +438,8 @@ static void rxpolling (tmr_t* tmr) {
 
 
 int ral_config (str_t hwspec, u4_t cca_region, char* json, int jsonlen, chdefl_t* upchs) {
+    LOG(MOD_RAL|INFO, "ral_config: hwspec=%s cca_region=%u jsonlen=%d",
+        hwspec, cca_region, jsonlen);
     if( strcmp(hwspec, "sx1301/1") != 0 ) {
         LOG(MOD_RAL|ERROR, "Unsupported hwspec=%s", hwspec);
         return 0;

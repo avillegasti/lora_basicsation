@@ -57,6 +57,7 @@ const char* MODSTR[] = {
     [MOD_GPS/8]= "GPS",
     [MOD_SIM/8]= "SIM",
     [MOD_WEB/8]= "WEB",
+    [MOD_DB /8]= "DB ",
 };
 
 #ifndef CFG_logini_lvl

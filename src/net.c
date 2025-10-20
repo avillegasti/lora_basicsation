@@ -815,6 +815,9 @@ dbuf_t ws_getSendbuf (ws_t* conn, int minsize) {
 // b->pos should be the length of the filled in data
 //
 void ws_sendData (ws_t* conn, dbuf_t* b, int binaryData) {
+    printf("Sending WS_SendData --------------------------------\n");
+    printf("Sending %d bytes\n", b->pos);
+    printf("Conn state: %d\n", conn->state);
     if( conn->state != WS_CONNECTED )
         return;
     int n = b->pos;
@@ -829,6 +832,9 @@ void ws_sendData (ws_t* conn, dbuf_t* b, int binaryData) {
 
 
 void ws_sendText (ws_t* conn, dbuf_t* b) {
+    printf("Sending WS_SENDTEXT --------------------------------\n");
+    printf("Sending %d bytes\n", b->pos);
+    printf("Sending data:\n%.*s\n", b->pos, b->buf);
     int offset = 0;
     int plen = b->pos;
     while( offset < plen ) {

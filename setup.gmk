@@ -96,9 +96,11 @@ CFG.testfs              = logini_lvl=DEBUG selftests tlsdebug lgwsim ral_lgw
 CFG.testpin             = logini_lvl=INFO tlsdebug ral_lgw testpin
 CFG.std                 = logini_lvl=INFO tlsdebug ral_lgw
 CFG.stdn                = logini_lvl=INFO tlsdebug ral_master_slave
-CFG.std-no_stts751       = logini_lvl=INFO tlsdebug ral_lgw no_stts751
+CFG.std-no_stts751      = logini_lvl=INFO tlsdebug ral_lgw no_stts751
 CFG.debug               = logini_lvl=DEBUG selftests tlsdebug ral_lgw
 CFG.debugn              = logini_lvl=DEBUG selftests tlsdebug ral_master_slave
+CFG.saf                 = logini_lvl=INFO tlsdebug ral_lgw saf_lgw
+CFG.saf-no_stts751      = logini_lvl=INFO tlsdebug ral_lgw saf_lgw no_stts751
 
 # -- Platform specific
 CFG.linux   = linux lgw1 no_leds
@@ -142,6 +144,8 @@ CFLAGS.linux.testms   = -g -O0 --coverage
 CFLAGS.linux.testfs   = -g -O0 --coverage
 CFLAGS.linux.testpin  = -g -O3
 CFLAGS.linux.std      = -g -O3
+CFLAGS.linux.saf      = -g -O3
+CFLAGS.linux.saf-nosstts751      = -g -O3
 
 LIBS.linux   = -llgw   ${MBEDLIBS}      -lpthread
 LIBS.linuxV2 = -llgw2  ${MBEDLIBS} -lrt -lpthread -lspi
